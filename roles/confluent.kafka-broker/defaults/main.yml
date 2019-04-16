@@ -10,7 +10,7 @@ kafka:
       - /var/lib/kafka/data
     systemd:
       enabled: yes
-      state: started
+      state: restarted
     environment:
       KAFKA_HEAP_OPTS: "-Xmx1g"
     config:
@@ -34,3 +34,10 @@ kafka:
       confluent.metrics.reporter.topic.replicas: 3
       ssl.endpoint.identification.algorithm: ""
       confluent.metrics.reporter.ssl.endpoint.identification.algorithm: ""
+      ssl.keystore.location: /var/private/ssl/kafka.server.keystore.jks
+      ssl.keystore.password: password
+      ssl.key.password: password
+      ssl.truststore.location: /var/private/ssl/kafka.server.truststore.jks
+     #security.inter.broker.protocol: SSL
+      ssl.truststore.password: password
+

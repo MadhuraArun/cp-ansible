@@ -1,5 +1,5 @@
 # Maintained by Ansible
-listeners=PLAINTEXT://:{{broker.config.port}}
+listeners=PLAINTEXT://:{{broker.config.port}},SSL://:9093
 
 {% include './includes/base_server.properties.j2' %}
 

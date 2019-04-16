@@ -1,0 +1,63 @@
+- hosts: localhost
+  vars_files:
+   - vars.yml
+  vars_prompt:
+   - name: "ec2_access_key"
+     prompt: "Enter the access key"
+     private: yes
+   - name: "ec2_secret_key"
+     prompt: "Enter the secret access key"
+     private: yes 
+  tasks:
+   - aws_s3:
+      bucket: confluentdemo
+      object: /Confluent.pem
+      dest: /home/ec2-user/democonfluent/cp-ansible/aws/Confluent.pem
+      mode: get
+   - file: 
+      path: /home/ec2-user/democonfluent/cp-ansible/aws/Confluent.pem
+      mode: 0400
+   - ec2_group:
+      name: ConfluentDemo
+      description: Security group for Confluent
+      vpc_id: "{{ vpc_id }}"
+      region: "{{ ec2_region }}"
+      aws_access_key: "{{ ec2_access_key }}"
+      aws_secret_key: "{{ ec2_secret_key }}"
+      state: present
+      rules:
+        - proto: all
+          cidr_ip: 0.0.0.0/0
+     register: security_group
+   - ec2:
+      key_name: "{{ ec2_key_name }}"
+      ec2_region: "{{ ec2_region }}"
+      ec2_access_key: "{{ ec2_access_key }}"
+      ec2_secret_key: "{{ ec2_secret_key }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ image }}"
+      count: "{{ count }}" 
+      wait: yes
+      vpc_subnet_id: "{{vpc_subnet_id}}"
+      group_id: "{{security_group.group_id}}"
+      user_data: |
+                 #!/bin/sh
+                 sudo yum install git -y
+                 sudo yum install vim -y
+
+      instance_tags:
+        Name: PreDemo-Confluent
+      assign_public_ip: yes
+   - aws_s3:
+      bucket: confluentdemo
+      object: /Confluent.pem
+      dest: /home/ec2-user/Confluent.pem
+      mode: get
+   - name: Prepare inventory 
+     command: python getips.py
+   - name: Move inventory
+     command: mv /home/ec2-user/democonfluent/cp-ansible/aws/hosts.yml /home/ec2-user/democonfluent/cp-ansible
+     become: sudo
+   - file:
+      path: /home/ec2-user/Confluent.pem
+      mode: 0400

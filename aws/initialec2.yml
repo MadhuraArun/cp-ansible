@@ -1,0 +1,69 @@
+- hosts: localhost
+  vars_files:
+   - initialvars.yml
+  vars_prompt:
+   - name: "ec2_access_key"
+     prompt: "Enter the access key"
+     private: yes
+   - name: "ec2_secret_key"
+     prompt: "Enter the secret access key"
+     private: yes
+  tasks:
+   - ec2_group:
+      name: ConfluentPreDemo
+      description: Security group for Confluent
+      vpc_id: "{{ vpc_id }}"
+      region: "{{ ec2_region }}"
+      aws_access_key: "{{ ec2_access_key }}"
+      aws_secret_key: "{{ ec2_secret_key }}"
+      state: present
+      rules:
+        - proto: all
+          cidr_ip: 0.0.0.0/0
+     register: security_group
+   - ec2:
+      key_name: "{{ ec2_key_name }}"
+      ec2_region: "{{ ec2_region }}"
+      ec2_access_key: "{{ ec2_access_key }}"
+      ec2_secret_key: "{{ ec2_secret_key }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ image }}"
+      count: "{{ count }}"
+      wait: yes
+      vpc_subnet_id: "{{vpc_subnet_id}}"
+      group_id: "{{security_group.group_id}}"
+      user_data: |
+                 #!/bin/sh
+                 sudo yum install git -y
+                 sudo yum install python -y
+                 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+                 sudo yum install ansible -y
+                 sed -i 's/#   StrictHostKeyChecking ask/StrictHostKeyChecking no/g' /etc/ssh/ssh_config
+                 sudo systemctl restart sshd
+      instance_tags:
+        Name: confluent
+      assign_public_ip: yes
+   - ec2:
+      key_name: "{{ ec2_key_name }}"
+      ec2_region: "{{ ec2_region }}"
+      ec2_access_key: "{{ ec2_access_key }}"
+      ec2_secret_key: "{{ ec2_secret_key }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ image }}"
+      count: "{{ count }}"
+      wait: yes
+      vpc_subnet_id: "{{vpc_subnet_id}}"
+      group_id: "{{security_group.group_id}}"
+      user_data: |
+                 #!/bin/sh
+                 sudo yum install git -y
+                 sudo yum install python -y
+                 sudo yum install java -y
+                 sudo rpm -Uvh https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+                 sudo yum install ansible -y
+                 sudo yum install vim -y
+      instance_tags:
+        Name: confluent-consumer
+      assign_public_ip: yes
+
+

@@ -1,0 +1,9 @@
+---
+ec2_key_name: "Confluent"
+ec2_region: "us-east-1"
+instance_type: "t2.medium"
+image: "ami-011b3ccf1bd6db744"
+count: "4"
+wait: "yes"
+vpc_subnet_id: "subnet-a5b7cc8a"
+vpc_id: "vpc-f62ac48d"

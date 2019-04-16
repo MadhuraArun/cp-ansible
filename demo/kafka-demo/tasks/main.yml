@@ -1,0 +1,42 @@
+---
+# tasks file for kafka-demo
+- shell: aws ec2 describe-instances --filters 'Name=tag:Name,Values=confluent' --query 'Reservations[].Instances[].PublicDnsName' --region us-east-1 | grep ec2 | tr -d \" | xargs
+  register: public_dns
+- get_url:
+    url: http://mirrors.estointernet.in/apache/kafka/2.2.0/kafka_2.11-2.2.0.tgz
+    dest: /home/ec2-user/kafka_2.11-2.2.0.tgz
+- command: tar -xzf /home/ec2-user/kafka_2.11-2.2.0.tgz
+  args:
+    chdir: /home/ec2-user/
+- file:
+    path: /var/private/ssl
+    state: directory
+    mode: 0755
+  become: yes
+  become_method: sudo
+- template:
+    src: test.j2
+    dest: /var/private/ssl/test.sh
+    owner: root
+    group: root
+    mode: 0777
+  become: yes
+  become_method: sudo 
+- command: bash test.sh
+  args:
+    chdir: /var/private/ssl/
+  become: yes
+  become_method: sudo 
+- lineinfile:
+    path: /home/ec2-user/kafka_2.11-2.2.0/config/server.properties
+    create: yes
+    line: "{{ item }}"    
+  with_items:
+    - advertised.listeners=PLAINTEXT://{{ public_dns.stdout }}:9092,SSL://{{ public_dns.stdout }}:9093
+    - listeners=PLAINTEXT://:9092,SSL://:9093
+    - ssl.keystore.location=/var/private/ssl/kafka.server.keystore.jks
+    - ssl.keystore.password=password
+    - ssl.key.password=password
+    - ssl.truststore.location=/var/private/ssl/kafka.server.truststore.jks
+    - ssl.truststore.password=password
+
